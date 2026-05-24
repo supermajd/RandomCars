@@ -72,16 +72,11 @@ def test_model_does_not_regress(trained_model):
 
     if front is None:
         return
-
-    #-=-=-=-
-    # Regression gate: reject if more than tolerance worse on MAE or RMSE
-    #-=-=-=-
-
-    assert mae <= front['mae'] * (1 + REGRESSION_TOLERANCE), (
+        
+    assert mae <= front["mae"] * (1 + REGRESSION_TOLERANCE), (
         f'MAE {mae:.0f} regressed beyond {REGRESSION_TOLERANCE:.0%} '
         f'vs approved {front["mae"]:.0f}')
 
-    assert rmse <= front['rmse'] * (1 + REGRESSION_TOLERANCE), (
+    assert rmse <= front["rmse"] * (1 + REGRESSION_TOLERANCE), (
         f'RMSE {rmse:.0f} regressed beyond {REGRESSION_TOLERANCE:.0%} '
         f'vs approved {front["rmse"]:.0f}')
-

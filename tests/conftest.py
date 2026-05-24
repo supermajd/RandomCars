@@ -8,6 +8,13 @@ from fastapi.testclient import TestClient
 from backend.main import app
 
 
+from sklearn.ensemble import RandomForestRegressor
+
+from ml.config import DATA_PATH, RANDOM_STATE, MODEL_PARAMS
+from ml.features import load_data, split, build_preprocessor
+from ml.train import build
+
+
 @pytest.fixture
 def client():
     """ FastAPI test client that triggers startup (lifespan), so the model loads.
@@ -44,3 +51,18 @@ def payload() -> dict:
         'Exter Qual': 'Gd',
         'Kitchen Qual': 'Gd',
     }
+
+
+@pytest.fixture(scope="session")
+def trained_model():
+    data = load_data(DATA_PATH)
+
+    X_train, X_test, y_train, y_test = split(data)
+
+    preprocessor = build_preprocessor()
+    model = RandomForestRegressor(**MODEL_PARAMS)
+
+    pipeline = build(preprocessor, model)
+    pipeline.fit(X_train, y_train)
+
+    return pipeline, X_train, X_test, y_train, y_test

@@ -51,6 +51,7 @@ CATEGORICAL_FEATURES = [
 # Full feature list consumed by training and inference
 FEATURES = NUMERIC_FEATURES + CATEGORICAL_FEATURES
 
+REGRESSION_TOLERANCE = 0.05
 
 #-=-=-=-
 # Training
