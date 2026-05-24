@@ -1,0 +1,1 @@
+# tests/__init__.py  (and tests/api/__init__.py — same empty file in each test dir)

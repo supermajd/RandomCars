@@ -13,24 +13,31 @@ from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
 from sklearn.ensemble import RandomForestRegressor
 
-from features import (
+from ml.features import (
     load_data, 
     split, 
     build_preprocessor)
 
-from evaluate import (
+from ml.evaluate import (
     evaluate, 
     baseline_metrics, 
     check_gates
 )
 
-from config import (
-    DATA_PATH,
+from ml.config import (
+    DATA_PATH, CANDIDATE_DIR,
     MODEL_NAME, RANDOM_STATE, 
     MODEL_PARAMS,
-    RANDOM_STATE)
+    RANDOM_STATE,
+    FEATURES, TEST_SIZE)
 
+from datetime import datetime, timezone
 
+import joblib
+
+import json 
+
+from pathlib import Path
 
 def build(preprocessor, model) -> Pipeline:
     """ Builds the full pipeline: preprocessing followed by the regressor.
@@ -99,7 +106,12 @@ def save_model(model, metrics) -> None:
     with open(meta_path, 'w') as f:
         json.dump(metadata, f, indent = 2)
 
+    Path('artifacts').mkdir(exist_ok = True)
+    Path('artifacts/last_candidate.txt').write_text(model_id)
+
     print(f'Saved candidate model: {model_id}')
+
+    return model_id
 
 
 def main():

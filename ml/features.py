@@ -10,7 +10,7 @@ from sklearn.pipeline import Pipeline
 from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import OneHotEncoder
 
-from config import (
+from ml.config import (
     DATA_PATH, TARGET, FEATURES,
     NUMERIC_FEATURES, CATEGORICAL_FEATURES,
     RANDOM_STATE, TEST_SIZE)

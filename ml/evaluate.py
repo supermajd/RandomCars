@@ -42,6 +42,28 @@ def check_gates(metrics, baseline) -> bool:
 
     return passed
 
+def check_regression(metrics, previous, tolerance: float = 0.10) -> bool:
+    """ Checks the new model does not regress against the previous approved model.
+
+    The new model must not worsen MAE or RMSE by more than the allowed
+    tolerance. If there is no previous model, the check passes.
+
+    :param metrics: New model metrics from evaluate
+    :param previous: Previous approved model metrics, or None if none exists
+    :param tolerance: Allowed fractional worsening, default 0.10 (10%)
+    :return passed: True if the model is within the regression tolerance
+    """
+
+    if previous is None:
+        return True
+
+    mae_ok = metrics['mae'] <= previous['mae'] * (1 + tolerance)
+    rmse_ok = metrics['rmse'] <= previous['rmse'] * (1 + tolerance)
+
+    passed = mae_ok and rmse_ok
+
+    return passed
+
 def baseline_metrics(X_train, X_test, y_train, y_test) -> dict:
     """ Fits a DummyRegressor baseline and returns its metrics.
     :param X_train: Training features
