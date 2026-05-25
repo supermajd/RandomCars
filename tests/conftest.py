@@ -6,8 +6,9 @@ import json
 
 import joblib
 import pytest
-from backend.main import app
 from fastapi.testclient import TestClient
+
+from backend.main import app
 from ml.config import APPROVED_DIR, DATA_PATH
 from ml.features import load_data, split
 

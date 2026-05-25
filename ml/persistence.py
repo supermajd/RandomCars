@@ -8,6 +8,7 @@ import shutil
 from datetime import UTC, datetime
 
 import joblib
+
 from ml.config import APPROVED_DIR, CANDIDATE_DIR
 
 LATEST_PATH = APPROVED_DIR / 'latest.json'

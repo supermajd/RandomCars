@@ -1,8 +1,14 @@
-"""features.py: Loads Ames housing data, builds the train/test split, and prepares model features."""
+"""features.py: Loads data, builds the train/test split, and makes features."""
 
 __author__ = 'Majd Jamal'
 
 import pandas as pd
+from sklearn.compose import ColumnTransformer
+from sklearn.impute import SimpleImputer
+from sklearn.model_selection import train_test_split
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import OneHotEncoder
+
 from ml.config import (
     CATEGORICAL_FEATURES,
     DATA_PATH,
@@ -12,11 +18,6 @@ from ml.config import (
     TARGET,
     TEST_SIZE,
 )
-from sklearn.compose import ColumnTransformer
-from sklearn.impute import SimpleImputer
-from sklearn.model_selection import train_test_split
-from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import OneHotEncoder
 
 
 def load_data(path) -> pd.DataFrame:

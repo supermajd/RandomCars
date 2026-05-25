@@ -5,9 +5,10 @@ __author__ = 'Majd Jamal'
 from contextlib import asynccontextmanager
 
 import pandas as pd  # add to imports at top
+from fastapi import FastAPI, HTTPException
+
 from backend.schemas import HouseFeatures, ModelInfo, PredictionResponse
 from db.db import init_db, log_prediction
-from fastapi import FastAPI, HTTPException
 from ml.persistence import load_model
 
 

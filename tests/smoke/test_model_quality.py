@@ -7,9 +7,10 @@ import os
 
 import numpy as np
 import pytest
-from ml.config import REGRESSION_TOLERANCE
 from sklearn.dummy import DummyRegressor
 from sklearn.metrics import mean_absolute_error, r2_score, root_mean_squared_error
+
+from ml.config import REGRESSION_TOLERANCE
 
 # Model must cut the baseline's error by at least this fraction.
 # Scale-free: holds on any dataset, unlike an absolute MAE ceiling.

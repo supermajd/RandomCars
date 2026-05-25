@@ -1,4 +1,4 @@
-"""train.py: Trains the Random Houses model, evaluates it against a baseline, and saves the artifact with metadata."""
+"""train.py: Trains the Random Houses model and evaluates it against a baseline."""
 
 __author__ = 'Majd Jamal'
 
@@ -9,6 +9,10 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 import joblib
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.pipeline import Pipeline
+from xgboost import XGBRegressor
+
 from ml.args import parse_train_args
 from ml.config import (
     CANDIDATE_DIR,
@@ -20,9 +24,6 @@ from ml.config import (
 )
 from ml.evaluate import baseline_metrics, check_gates, evaluate
 from ml.features import build_preprocessor, load_data, split
-from sklearn.ensemble import RandomForestRegressor
-from sklearn.pipeline import Pipeline
-from xgboost import XGBRegressor
 
 
 def build(preprocessor, model) -> Pipeline:
@@ -151,8 +152,6 @@ def main():
 
     metrics = evaluate(pipeline, X_test, y_test)
     baseline = baseline_metrics(X_train, X_test, y_train, y_test)
-
-    checker = check_gates(metrics, baseline)
 
     if not check_gates(metrics, baseline):
         raise ValueError(
