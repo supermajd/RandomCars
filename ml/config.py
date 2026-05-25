@@ -57,17 +57,38 @@ REGRESSION_TOLERANCE = 0.05
 # Training
 #-=-=-=-
 
-MODEL_NAME = 'random_forest'     # Logged in metadata; swap to 'knn' if the model changes
+RANDOM_STATE = 42
+TEST_SIZE = 0.2
 
-RANDOM_STATE = 42                # Fixed seed for split and model determinism
-TEST_SIZE = 0.2                  # Holdout fraction for evaluation
+MODEL_NAME = "random_forest"  # default only
 
-# RandomForestRegressor parameters
-MODEL_PARAMS = {
-    'n_estimators': 300,
-    'max_depth': None,
-    'random_state': RANDOM_STATE,
-    'n_jobs': -1,
-    'verbose': 1,
+
+MODEL_CONFIGS = {
+    "random_forest": {
+        "n_estimators": 300,
+        "max_depth": None,
+        "min_samples_split": 2,
+        "min_samples_leaf": 1,
+        "random_state": RANDOM_STATE,
+        "n_jobs": -1,
+    },
+
+    "xgboost": {
+        "n_estimators": 500,
+        "max_depth": 4,
+        "learning_rate": 0.05,
+        "subsample": 0.8,
+        "colsample_bytree": 0.8,
+        "objective": "reg:squarederror",
+        "random_state": RANDOM_STATE,
+        "n_jobs": -1,
+    },
 }
 
+if MODEL_NAME not in MODEL_CONFIGS:
+    raise ValueError(
+        f"Unsupported MODEL_NAME: {MODEL_NAME}. "
+        f"Supported models: {list(MODEL_CONFIGS)}"
+    )
+
+MODEL_PARAMS = MODEL_CONFIGS[MODEL_NAME]

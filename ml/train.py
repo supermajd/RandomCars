@@ -9,6 +9,10 @@ from sklearn.pipeline import Pipeline
 from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import OneHotEncoder
 
+import subprocess
+
+from xgboost import XGBRegressor
+
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
 from sklearn.ensemble import RandomForestRegressor
@@ -25,11 +29,13 @@ from ml.evaluate import (
 )
 
 from ml.config import (
-    DATA_PATH, CANDIDATE_DIR,
-    MODEL_NAME, RANDOM_STATE, 
-    MODEL_PARAMS,
+    DATA_PATH,
+    CANDIDATE_DIR,
     RANDOM_STATE,
-    FEATURES, TEST_SIZE)
+    FEATURES,
+    TEST_SIZE,
+    MODEL_CONFIGS,
+)
 
 from datetime import datetime, timezone
 
@@ -38,6 +44,8 @@ import joblib
 import json 
 
 from pathlib import Path
+
+from ml.args import parse_train_args
 
 def build(preprocessor, model) -> Pipeline:
     """ Builds the full pipeline: preprocessing followed by the regressor.
@@ -67,7 +75,7 @@ def get_git_sha() -> str:
 
     return sha
 
-def save_model(model, metrics) -> None:
+def save_model(model, metrics, model_name, model_params) -> None:
     """ Saves the model artifact and metadata to the candidates directory.
 
     The model is saved as a joblib artifact and accompanied by a metadata
@@ -82,7 +90,7 @@ def save_model(model, metrics) -> None:
 
     timestamp = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H%M%SZ')
     git_sha = get_git_sha()
-    model_id = f'{MODEL_NAME}_{timestamp}_{git_sha}'
+    model_id = f'{model_name}_{timestamp}_{git_sha}'
 
     model_path = CANDIDATE_DIR / f'{model_id}.joblib'
     meta_path = CANDIDATE_DIR / f'{model_id}.metadata.json'
@@ -91,14 +99,14 @@ def save_model(model, metrics) -> None:
 
     metadata = {
         'model_id': model_id,
-        'model_name': MODEL_NAME,
+        'model_name': model_name,
         'created_at': timestamp,
         'git_sha': git_sha,
         'data_path': str(DATA_PATH),
         'features': FEATURES,
         'random_state': RANDOM_STATE,
         'test_size': TEST_SIZE,
-        'model_params': MODEL_PARAMS,
+        'model_params': model_params,
         'metrics': metrics,
         'status': 'candidate',
     }
@@ -113,8 +121,28 @@ def save_model(model, metrics) -> None:
 
     return model_id
 
+def resolve_model_params(model_name, args):
+    model_params = MODEL_CONFIGS[model_name].copy()
+
+    cli_overrides = {
+        'n_estimators': args.n_estimators,
+        'max_depth': args.max_depth,
+        'random_state': args.random_state,
+        'n_jobs': args.n_jobs,
+        'learning_rate': args.learning_rate,
+    }
+
+    for key, value in cli_overrides.items():
+        if value is not None:
+            model_params[key] = value
+
+    return model_params
 
 def main():
+
+    args = parse_train_args()
+    model_name = args.model_name
+    model_params = resolve_model_params(model_name, args)
 
     data = load_data(DATA_PATH)
     
@@ -122,12 +150,16 @@ def main():
 
     preprocessor = build_preprocessor()
 
+    if model_name == 'random_forest':
+        model = RandomForestRegressor(**model_params)
 
-    if MODEL_NAME == 'random_forest':
-        model = RandomForestRegressor(**MODEL_PARAMS)
+    elif model_name == 'xgboost':
+        model = XGBRegressor(**model_params)
     else:
-        raise ValueError(f'Unsupported MODEL_NAME: {MODEL_NAME}. Use "random_forest".')
-
+        raise ValueError(
+            f'Unsupported model_name: {model_name}. '
+            'Use "random_forest" or "xgboost".'
+        )
     pipeline = build(preprocessor, model)
     
     pipeline.fit(X_train, y_train)
@@ -143,7 +175,12 @@ def main():
             'Model failed quality gates! It did not beat the baseline on MAE/RMSE, or R2 <= 0.')
 
     print('\n =-=-=-=- Quality gates passed -=-=-=-= \n')
-    save_model(pipeline, metrics)
+    save_model(
+        pipeline,
+        metrics,
+        model_name,
+        model_params
+        )
 
 
 if __name__ == '__main__':
