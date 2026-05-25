@@ -1,23 +1,20 @@
 """conftest.py: Shared pytest fixtures for the Random Houses test suite."""
 
-__author__ = "Majd Jamal"
+__author__ = 'Majd Jamal'
 
+import json
+
+import joblib
 import pytest
-from fastapi.testclient import TestClient
-
 from backend.main import app
-
-
-from sklearn.ensemble import RandomForestRegressor
-
-from ml.config import DATA_PATH, RANDOM_STATE, MODEL_PARAMS
-from ml.features import load_data, split, build_preprocessor
-from ml.train import build
+from fastapi.testclient import TestClient
+from ml.config import APPROVED_DIR, DATA_PATH
+from ml.features import load_data, split
 
 
 @pytest.fixture
 def client():
-    """ FastAPI test client that triggers startup (lifespan), so the model loads.
+    """FastAPI test client that triggers startup (lifespan), so the model loads.
     :return client: TestClient bound to the app
     """
 
@@ -27,7 +24,7 @@ def client():
 
 @pytest.fixture
 def payload() -> dict:
-    """ A valid /predict request body using the Ames feature aliases.
+    """A valid /predict request body using the Ames feature aliases.
     :return payload: One house as a feature dict
     """
 
@@ -53,16 +50,33 @@ def payload() -> dict:
     }
 
 
-@pytest.fixture(scope="session")
-def trained_model():
-    data = load_data(DATA_PATH)
+@pytest.fixture(scope='session')
+def test_split():
+    """Load the deterministic train/test split without training a model."""
 
+    data = load_data(DATA_PATH)
     X_train, X_test, y_train, y_test = split(data)
 
-    preprocessor = build_preprocessor()
-    model = RandomForestRegressor(**MODEL_PARAMS)
+    return X_train, X_test, y_train, y_test
 
-    pipeline = build(preprocessor, model)
-    pipeline.fit(X_train, y_train)
 
-    return pipeline, X_train, X_test, y_train, y_test
+@pytest.fixture(scope='session')
+def approved_model():
+    """Load the pushed approved model artifact without training."""
+
+    latest_path = APPROVED_DIR / 'latest.json'
+
+    with open(latest_path, encoding='utf-8') as f:
+        latest = json.load(f)
+
+    model_id = latest['model_id']
+
+    model_path = APPROVED_DIR / f'{model_id}.joblib'
+    metadata_path = APPROVED_DIR / f'{model_id}.metadata.json'
+
+    model = joblib.load(model_path)
+
+    with open(metadata_path, encoding='utf-8') as f:
+        metadata = json.load(f)
+
+    return model, metadata, latest

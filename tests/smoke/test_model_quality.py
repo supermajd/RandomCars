@@ -1,32 +1,28 @@
 """test_model_quality.py: Quality gate — model must outperform a naive baseline."""
 
-__author__ = "Majd Jamal"
+__author__ = 'Majd Jamal'
+
+import json
+import os
 
 import numpy as np
-from sklearn.dummy import DummyRegressor
-from sklearn.metrics import mean_absolute_error, root_mean_squared_error, r2_score
-
+import pytest
 from ml.config import REGRESSION_TOLERANCE
-from ml.persistence import load_best
-
+from sklearn.dummy import DummyRegressor
+from sklearn.metrics import mean_absolute_error, r2_score, root_mean_squared_error
 
 # Model must cut the baseline's error by at least this fraction.
 # Scale-free: holds on any dataset, unlike an absolute MAE ceiling.
-MIN_IMPROVEMENT = 0.40   # at least 40% lower MAE than predicting the mean
+MIN_IMPROVEMENT = 0.40  # at least 40% lower MAE than predicting the mean
 
 
-def test_model_beats_baseline(trained_model):
-    """ A trained model must beat a mean-predicting baseline by a clear margin.
-    :param trained_model: (pipeline, X_train, X_test, y_train, y_test)
-    """
+def test_model_beats_baseline(approved_model, test_split):
+    """The pushed approved model must beat a mean-predicting baseline."""
 
-    pipeline, X_train, X_test, y_train, y_test = trained_model
+    pipeline, metadata, latest = approved_model
+    X_train, X_test, y_train, y_test = test_split
 
-    #-=-=-=-
-    # Baseline: predict the training mean
-    #-=-=-=-
-
-    dummy = DummyRegressor(strategy = 'mean')
+    dummy = DummyRegressor(strategy='mean')
     dummy.fit(X_train, y_train)
 
     pred = pipeline.predict(X_test)
@@ -35,27 +31,25 @@ def test_model_beats_baseline(trained_model):
     model_mae = mean_absolute_error(y_test, pred)
     base_mae = mean_absolute_error(y_test, base_pred)
 
-    #-=-=-=-
-    # Hygiene + relative quality gate
-    #-=-=-=-
-
     assert np.all(np.isfinite(pred)), 'Predictions contain NaN or inf'
 
     improvement = 1 - (model_mae / base_mae)
 
     assert improvement >= MIN_IMPROVEMENT, (
         f'Model MAE {model_mae:.0f} only {improvement:.0%} better than '
-        f'baseline {base_mae:.0f}; need >= {MIN_IMPROVEMENT:.0%}')
+        f'baseline {base_mae:.0f}; need >= {MIN_IMPROVEMENT:.0%}'
+    )
 
     assert r2_score(y_test, pred) > 0, 'R2 not positive — worse than the mean'
 
-def test_model_does_not_regress(trained_model):
-    """ A freshly trained model must not worsen MAE or RMSE by more than
-    REGRESSION_TOLERANCE versus the currently approved model.
-    :param trained_model: (pipeline, X_test, y_test)
+
+def test_model_does_not_regress(approved_model, test_split):
+    """The pushed approved model must not worsen MAE or RMSE by more than
+    REGRESSION_TOLERANCE versus the previous approved model.
     """
 
-    pipeline, X_train, X_test, y_train, y_test = trained_model 
+    pipeline, metadata, latest = approved_model
+    X_train, X_test, y_train, y_test = test_split
 
     pred = pipeline.predict(X_test)
 
@@ -64,19 +58,44 @@ def test_model_does_not_regress(trained_model):
     mae = mean_absolute_error(y_test, pred)
     rmse = root_mean_squared_error(y_test, pred)
 
-    front = load_best()
+    previous_best_path = os.environ.get('PREVIOUS_BEST_PATH')
 
-    #-=-=-=-
-    # Cold start: nothing approved yet, nothing to regress against
-    #-=-=-=-
+    if previous_best_path is None:
+        pytest.fail('PREVIOUS_BEST_PATH not set; cannot compare against previous best')
 
-    if front is None:
+    with open(previous_best_path, encoding='utf-8') as f:
+        front = json.load(f)
+
+    if not front:
         return
-        
-    assert mae <= front["mae"] * (1 + REGRESSION_TOLERANCE), (
-        f'MAE {mae:.0f} regressed beyond {REGRESSION_TOLERANCE:.0%} '
-        f'vs approved {front["mae"]:.0f}')
 
-    assert rmse <= front["rmse"] * (1 + REGRESSION_TOLERANCE), (
+    front_metrics = front['metrics']
+
+    assert mae <= front_metrics['mae'] * (1 + REGRESSION_TOLERANCE), (
+        f'MAE {mae:.0f} regressed beyond {REGRESSION_TOLERANCE:.0%} '
+        f'vs approved {front_metrics["mae"]:.0f}'
+    )
+
+    assert rmse <= front_metrics['rmse'] * (1 + REGRESSION_TOLERANCE), (
         f'RMSE {rmse:.0f} regressed beyond {REGRESSION_TOLERANCE:.0%} '
-        f'vs approved {front["rmse"]:.0f}')
+        f'vs approved {front_metrics["rmse"]:.0f}'
+    )
+
+
+def test_model_metadata_matches_actual_metrics(approved_model, test_split):
+    """The pushed model metadata must match the actual metrics of the pushed model."""
+
+    pipeline, metadata, latest = approved_model
+    X_train, X_test, y_train, y_test = test_split
+
+    pred = pipeline.predict(X_test)
+
+    actual_mae = mean_absolute_error(y_test, pred)
+    actual_rmse = root_mean_squared_error(y_test, pred)
+    actual_r2 = r2_score(y_test, pred)
+
+    recorded = metadata['metrics']
+
+    assert actual_mae == pytest.approx(recorded['mae'])
+    assert actual_rmse == pytest.approx(recorded['rmse'])
+    assert actual_r2 == pytest.approx(recorded['r2'])

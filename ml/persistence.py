@@ -1,28 +1,21 @@
-
 """persistence.py: Promotes candidate models to approved and maintains the latest pointer."""
 
-__author__ = "Majd Jamal"
+__author__ = 'Majd Jamal'
 
 import argparse
-
-
 import json
 import shutil
-import joblib 
+from datetime import UTC, datetime
 
-from pathlib import Path
-
-from ml.config import CANDIDATE_DIR, APPROVED_DIR
-from ml.evaluate import check_regression
-
-from datetime import datetime, timezone
-
+import joblib
+from ml.config import APPROVED_DIR, CANDIDATE_DIR
 
 LATEST_PATH = APPROVED_DIR / 'latest.json'
-REGRESSION_TOLERANCE = 0.10  
+REGRESSION_TOLERANCE = 0.10
+
 
 def load_best():
-    """ Reads the metrics of the currently approved model.
+    """Reads the metrics of the currently approved model.
     :return metrics: Approved model metrics, or None if no approved model exists
     """
 
@@ -34,8 +27,9 @@ def load_best():
 
     return latest['metrics']
 
+
 def compare(candidate, front) -> bool:
-    """ Regression gate: checks a candidate against the approved model.
+    """Regression gate: checks a candidate against the approved model.
 
     Lower is better for MAE and RMSE. The candidate passes if it does not
     worsen either metric by more than REGRESSION_TOLERANCE. With no approved
@@ -63,8 +57,9 @@ def compare(candidate, front) -> bool:
 
     return passed
 
+
 def promote(model_id: str) -> bool:
-    """ Promotes a candidate to approved if it passes the regression gate.
+    """Promotes a candidate to approved if it passes the regression gate.
 
     Locates the candidate files, runs the gate against the currently approved
     model, and on pass copies the artifact and metadata into the approved
@@ -74,7 +69,7 @@ def promote(model_id: str) -> bool:
     :return promoted: True if promoted, False otherwise
     """
 
-    APPROVED_DIR.mkdir(parents = True, exist_ok = True)
+    APPROVED_DIR.mkdir(parents=True, exist_ok=True)
 
     cand_model = CANDIDATE_DIR / f'{model_id}.joblib'
     cand_meta = CANDIDATE_DIR / f'{model_id}.metadata.json'
@@ -88,17 +83,17 @@ def promote(model_id: str) -> bool:
     candidate = metadata['metrics']
     front = load_best()
 
-    #-=-=-=-
+    # -=-=-=-
     # Regression gate
-    #-=-=-=-
+    # -=-=-=-
 
     if not compare(candidate, front):
         print(f'Candidate {model_id} rejected: regressed more than tolerance vs approved model.')
         return False
 
-    #-=-=-=-
+    # -=-=-=-
     # Promote artifact and metadata
-    #-=-=-=-
+    # -=-=-=-
 
     metadata['status'] = 'approved'
 
@@ -108,29 +103,30 @@ def promote(model_id: str) -> bool:
     shutil.copy2(cand_model, appr_model)
 
     with open(appr_meta, 'w') as f:
-        json.dump(metadata, f, indent = 2)
+        json.dump(metadata, f, indent=2)
 
-    #-=-=-=-
+    # -=-=-=-
     # Update latest pointer
-    #-=-=-=-
+    # -=-=-=-
 
     pointer = {
         'model_id': model_id,
-        'promoted_at': datetime.now(timezone.utc).strftime('%Y-%m-%dT%H%M%SZ'),
+        'promoted_at': datetime.now(UTC).strftime('%Y-%m-%dT%H%M%SZ'),
         'metrics': candidate,
     }
 
     with open(LATEST_PATH, 'w') as f:
-        json.dump(pointer, f, indent = 2)
+        json.dump(pointer, f, indent=2)
 
     print(f'Promoted model to approved: {model_id}')
 
     return True
 
+
 def main() -> None:
 
-    parser = argparse.ArgumentParser(description = 'Promote a candidate model to approved.')
-    parser.add_argument('--model-id', required = True, help = 'Candidate model id to promote')
+    parser = argparse.ArgumentParser(description='Promote a candidate model to approved.')
+    parser.add_argument('--model-id', required=True, help='Candidate model id to promote')
     args = parser.parse_args()
 
     promoted = promote(args.model_id)
@@ -138,8 +134,9 @@ def main() -> None:
     if not promoted:
         raise SystemExit(1)
 
+
 def get_approved_model_path():
-    """ Returns the artifact path of the currently approved model.
+    """Returns the artifact path of the currently approved model.
     :return model_path: Path to the approved .joblib, or None if none exists
     """
 
@@ -149,13 +146,13 @@ def get_approved_model_path():
     with open(LATEST_PATH) as f:
         latest = json.load(f)
 
-    model_path = APPROVED_DIR / f"{latest['model_id']}.joblib"
+    model_path = APPROVED_DIR / f'{latest["model_id"]}.joblib'
 
     return model_path
 
 
 def load_model():
-    """ Loads the currently approved model and its metadata for serving.
+    """Loads the currently approved model and its metadata for serving.
 
     Only loads self-generated, approved artifacts. joblib is pickle-based and
     can execute arbitrary code on load, so never read untrusted files.
@@ -181,9 +178,6 @@ def load_model():
 
     return model, metadata
 
+
 if __name__ == '__main__':
     main()
-
-
-
-

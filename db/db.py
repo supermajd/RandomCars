@@ -1,15 +1,13 @@
-
 """db.py: SQLite persistence for prediction logging."""
 
-__author__ = "Majd Jamal"
+__author__ = 'Majd Jamal'
 
-import os
 import json
+import os
 import sqlite3
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
-
 
 DB_PATH = Path(os.environ.get('DB_PATH', 'data/runtime/house_price.db'))
 
@@ -26,7 +24,7 @@ CREATE TABLE IF NOT EXISTS predictions (
 
 
 def connect():
-    """ Opens a SQLite connection to the configured database file.
+    """Opens a SQLite connection to the configured database file.
     :return conn: Open sqlite3 connection with row access by name
     """
 
@@ -37,13 +35,13 @@ def connect():
 
 
 def init_db() -> None:
-    """ Creates the database file and predictions table if they do not exist.
+    """Creates the database file and predictions table if they do not exist.
 
     Called once at API startup so the table is guaranteed to exist before
     the first prediction is logged.
     """
 
-    DB_PATH.parent.mkdir(parents = True, exist_ok = True)
+    DB_PATH.parent.mkdir(parents=True, exist_ok=True)
 
     conn = connect()
 
@@ -57,7 +55,7 @@ def init_db() -> None:
 
 
 def log_prediction(features: dict, predicted_price: float, model_version: str) -> str:
-    """ Logs a single prediction to the database.
+    """Logs a single prediction to the database.
 
     :param features: Validated input features as a dict
     :param predicted_price: Predicted house price
@@ -66,7 +64,7 @@ def log_prediction(features: dict, predicted_price: float, model_version: str) -
     """
 
     request_id = str(uuid.uuid4())
-    created_at = datetime.now(timezone.utc).isoformat()
+    created_at = datetime.now(UTC).isoformat()
     payload = json.dumps(features)
 
     conn = connect()
@@ -76,7 +74,8 @@ def log_prediction(features: dict, predicted_price: float, model_version: str) -
             'INSERT INTO predictions '
             '(request_id, created_at, model_version, features, predicted_price) '
             'VALUES (?, ?, ?, ?, ?)',
-            (request_id, created_at, model_version, payload, predicted_price))
+            (request_id, created_at, model_version, payload, predicted_price),
+        )
         conn.commit()
     finally:
         conn.close()

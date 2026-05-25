@@ -1,7 +1,6 @@
-
 """evaluate.py: Computes model metrics and runs the baseline quality gate."""
 
-__author__ = "Majd Jamal"
+__author__ = 'Majd Jamal'
 
 import numpy as np
 from sklearn.dummy import DummyRegressor
@@ -24,8 +23,9 @@ def evaluate(model, X_test, y_test):
 
     return metrics
 
+
 def check_gates(metrics, baseline) -> bool:
-    """ Checks the model passes the quality gates.
+    """Checks the model passes the quality gates.
 
     The model must beat the baseline on MAE and RMSE, and keep R2 above 0.
 
@@ -42,8 +42,9 @@ def check_gates(metrics, baseline) -> bool:
 
     return passed
 
+
 def check_regression(metrics, previous, tolerance: float = 0.10) -> bool:
-    """ Checks the new model does not regress against the previous approved model.
+    """Checks the new model does not regress against the previous approved model.
 
     The new model must not worsen MAE or RMSE by more than the allowed
     tolerance. If there is no previous model, the check passes.
@@ -64,8 +65,9 @@ def check_regression(metrics, previous, tolerance: float = 0.10) -> bool:
 
     return passed
 
+
 def baseline_metrics(X_train, X_test, y_train, y_test) -> dict:
-    """ Fits a DummyRegressor baseline and returns its metrics.
+    """Fits a DummyRegressor baseline and returns its metrics.
     :param X_train: Training features
     :param X_test: Test features
     :param y_train: Training targets
@@ -73,10 +75,9 @@ def baseline_metrics(X_train, X_test, y_train, y_test) -> dict:
     :return metrics: Baseline MAE, RMSE, and R2
     """
 
-    dummy = DummyRegressor(strategy = 'mean')
+    dummy = DummyRegressor(strategy='mean')
     dummy.fit(X_train, y_train)
 
     metrics = evaluate(dummy, X_test, y_test)
 
     return metrics
-
