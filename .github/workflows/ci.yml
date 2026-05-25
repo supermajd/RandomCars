@@ -1,4 +1,4 @@
-name: RandomHouses CI
+name: CI
 
 on:
   push:
@@ -9,35 +9,48 @@ on:
       - main
   workflow_dispatch:
 
-permissions:
-  contents: read
-
 jobs:
   test:
-    name: Run tests
     runs-on: ubuntu-latest
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
-          cache: "pip"
+          python-version: "3.11"
 
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
+          pip install -r requirements-dev.txt
 
-      - name: Check required files
+      - name: Lint with Ruff
+        run: ruff check .
+
+      - name: Check formatting with Ruff
+        run: ruff format --check .
+
+      - name: Save previous approved metadata
+        shell: bash
         run: |
-          test -f tests/conftest.py
-          test -f data/raw/AmesHousing.csv
-          test -f models/approved/latest.json
+          set -e
+
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            git fetch origin main
+            git show origin/main:models/approved/latest.json > /tmp/previous_latest.json
+          elif [ -n "${{ github.event.before }}" ] && [ "${{ github.event.before }}" != "0000000000000000000000000000000000000000" ]; then
+            git show ${{ github.event.before }}:models/approved/latest.json > /tmp/previous_latest.json
+          else
+            echo "{}" > /tmp/previous_latest.json
+          fi
 
       - name: Run tests
-        run: |
-          pytest -v
+        env:
+          PREVIOUS_BEST_PATH: /tmp/previous_latest.json
+        run: pytest -v
