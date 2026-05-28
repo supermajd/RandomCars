@@ -9,10 +9,9 @@ from datetime import UTC, datetime
 
 import joblib
 
-from ml.config import APPROVED_DIR, CANDIDATE_DIR
+from ml.config import APPROVED_DIR, CANDIDATE_DIR, REGRESSION_TOLERANCE
 
 LATEST_PATH = APPROVED_DIR / 'latest.json'
-REGRESSION_TOLERANCE = 0.10
 
 
 def load_best():

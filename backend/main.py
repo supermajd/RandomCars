@@ -4,7 +4,7 @@ __author__ = 'Majd Jamal'
 
 from contextlib import asynccontextmanager
 
-import pandas as pd  # add to imports at top
+import pandas as pd  
 from fastapi import FastAPI, HTTPException
 
 from backend.schemas import HouseFeatures, ModelInfo, PredictionResponse
@@ -72,7 +72,7 @@ def predict(features: HouseFeatures):
     # Build model input
     # -=-=-=-
     data = features.model_dump(by_alias=True)
-    # data = features.model_dump()
+    
     row = pd.DataFrame([data])
 
     # -=-=-=-
