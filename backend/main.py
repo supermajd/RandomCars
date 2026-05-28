@@ -72,7 +72,7 @@ def predict(features: HouseFeatures):
     # Build model input
     # -=-=-=-
     data = features.model_dump(by_alias=True)
-    
+
     row = pd.DataFrame([data])
 
     # -=-=-=-

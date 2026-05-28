@@ -5,3 +5,4 @@ data/runtime/*.db
 .DS_Store
 .env
 .venv/
+MLOPS_ROADMAP.md
