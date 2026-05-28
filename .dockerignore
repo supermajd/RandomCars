@@ -1,0 +1,7 @@
+RandomHouses/
+.git
+tests/
+models/candidates/
+.pytest_cache/
+.github/
+.venv

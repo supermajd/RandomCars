@@ -26,6 +26,8 @@ COPY data/raw/ data/raw/
 
 ENV DB_PATH=/data/house_price.db
 
+RUN mkdir -p /data && chown -R appuser:appuser /data
+
 USER appuser
 
 EXPOSE 8000

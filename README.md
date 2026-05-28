@@ -95,6 +95,34 @@ Open the API docs:
 http://127.0.0.1:8000/docs
 ```
 
+## Try the backend with curl
+
+### Health
+
+bash curl -s http://127.0.0.1:8000/health | jq 
+
+
+Example when ready:
+
+json {"status":"ok","model_version":"xgboost_..."} 
+
+While loading:
+
+json {"status":"loading","model_version":null} 
+
+### Predict
+
+The API expects JSON keys matching the Ames column aliases, including spaces in names:
+
+bash curl -s -X POST http://127.0.0.1:8000/predict \   -H "Content-Type: application/json" \   -d '{     "Gr Liv Area": 1710,     "Lot Area": 8450,     "Overall Qual": 7,     "Overall Cond": 5,     "Year Built": 2003,     "Year Remod/Add": 2003,     "Total Bsmt SF": 856,     "Garage Cars": 2,     "Garage Area": 548,     "Full Bath": 2,     "TotRms AbvGrd": 8,     "Fireplaces": 0,     "Neighborhood": "CollgCr",     "House Style": "2Story",     "Bldg Type": "1Fam",     "Central Air": "Y",     "Exter Qual": "Gd",     "Kitchen Qual": "Gd"   }' | jq 
+
+### Optional: model metadata
+
+bash curl -s http://127.0.0.1:8000/model | jq 
+
+If /predict returns 503, the model is not loaded yet. Check /health first or confirm models/approved/ is present in the container.
+
+
 ## Running tests
 
 ```bash
@@ -132,3 +160,6 @@ POST /predict  # Predict house price
 ## Purpose
 
 This repository is built as a portfolio project to show practical MLOps skills: model training, artifact promotion, API serving, automated testing, and CI/CD with GitHub Actions.
+
+
+
