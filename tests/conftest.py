@@ -1,16 +1,14 @@
-"""conftest.py: Shared pytest fixtures for the Random Houses test suite."""
+"""conftest.py: Shared pytest fixtures for the Car Broker 1001 test suite."""
 
 __author__ = 'Majd Jamal'
 
-import json
-
-import joblib
 import pytest
 from fastapi.testclient import TestClient
 
 from backend.main import app
-from ml.config import APPROVED_DIR, DATA_PATH
+from ml.config import DATA_PATH
 from ml.features import load_data, split
+from ml.persistence import load_model
 
 
 @pytest.fixture
@@ -25,29 +23,19 @@ def client():
 
 @pytest.fixture
 def payload() -> dict:
-    """A valid /predict request body using the Ames feature aliases.
-    :return payload: One house as a feature dict
+    """A valid /predict request body matching the car feature schema.
+    :return payload: One car as a feature dict
     """
 
     return {
-        'Gr Liv Area': 1710,
-        'Lot Area': 8450,
-        'Overall Qual': 7,
-        'Overall Cond': 5,
-        'Year Built': 2003,
-        'Year Remod/Add': 2003,
-        'Total Bsmt SF': 856,
-        'Garage Cars': 2,
-        'Garage Area': 548,
-        'Full Bath': 2,
-        'TotRms AbvGrd': 8,
-        'Fireplaces': 0,
-        'Neighborhood': 'CollgCr',
-        'House Style': '2Story',
-        'Bldg Type': '1Fam',
-        'Central Air': 'Y',
-        'Exter Qual': 'Gd',
-        'Kitchen Qual': 'Gd',
+        'brand': 'Maruti',
+        'km_driven': 120000,
+        'fuel_type': 'Petrol',
+        'transmission_type': 'Manual',
+        'mileage': 19.7,
+        'engine': 796,
+        'max_power': 46.3,
+        'seats': 5,
     }
 
 
@@ -63,21 +51,22 @@ def test_split():
 
 @pytest.fixture(scope='session')
 def approved_model():
-    """Load the pushed approved model artifact without training."""
+    """Load the pushed approved model artifact without training.
 
-    latest_path = APPROVED_DIR / 'latest.json'
+    Delegates to ml.persistence.load_model so it works for both sklearn
+    pipelines (single .joblib) and Keras models (.keras + separate
+    preprocessor joblib), keeping the test fixture loader-agnostic.
+    """
 
-    with open(latest_path, encoding='utf-8') as f:
-        latest = json.load(f)
+    model, metadata = load_model()
 
-    model_id = latest['model_id']
+    if model is None:
+        pytest.fail('No approved model found. Train and promote one before running tests.')
 
-    model_path = APPROVED_DIR / f'{model_id}.joblib'
-    metadata_path = APPROVED_DIR / f'{model_id}.metadata.json'
-
-    model = joblib.load(model_path)
-
-    with open(metadata_path, encoding='utf-8') as f:
-        metadata = json.load(f)
+    latest = {
+        'model_id': metadata['model_id'],
+        'model_name': metadata.get('model_name'),
+        'metrics': metadata['metrics'],
+    }
 
     return model, metadata, latest

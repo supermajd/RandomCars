@@ -6,3 +6,13 @@ data/runtime/*.db
 .env
 .venv/
 MLOPS_ROADMAP.md
+# MLflow
+mlruns/
+mlflow.db
+
+# Training candidates are ephemeral; only the promoted model is committed
+models/candidates/*
+!models/candidates/.gitkeep
+
+# Last-candidate pointer is local-only
+artifacts/last_candidate.txt

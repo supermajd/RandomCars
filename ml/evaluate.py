@@ -7,23 +7,6 @@ from sklearn.dummy import DummyRegressor
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
 
-def evaluate(model, X_test, y_test):
-
-    preds = model.predict(X_test)
-
-    mae = mean_absolute_error(y_test, preds)
-    rmse = np.sqrt(mean_squared_error(y_test, preds))
-    r2 = r2_score(y_test, preds)
-
-    metrics = {
-        'mae': float(mae),
-        'rmse': float(rmse),
-        'r2': float(r2),
-    }
-
-    return metrics
-
-
 def check_gates(metrics, baseline) -> bool:
     """Checks the model passes the quality gates.
 
@@ -79,5 +62,39 @@ def baseline_metrics(X_train, X_test, y_train, y_test) -> dict:
     dummy.fit(X_train, y_train)
 
     metrics = evaluate(dummy, X_test, y_test)
+
+    return metrics
+
+
+def compute_metrics(y_actual, y_pred):
+    """Computes regression metrics from true labels and predictions.
+    :param y_actual: Ground truth values
+    :param y_pred: Predicted values
+    :return metrics: MAE, RMSE, and R2 as a dict
+    """
+
+    mae = mean_absolute_error(y_actual, y_pred)
+    rmse = np.sqrt(mean_squared_error(y_actual, y_pred))
+    r2 = r2_score(y_actual, y_pred)
+
+    metrics = {
+        'mae': float(mae),
+        'rmse': float(rmse),
+        'r2': float(r2),
+    }
+
+    return metrics
+
+
+def evaluate(model, X_test, y_test):
+    """Predicts on X_test and computes regression metrics.
+    :param model: Fitted estimator with .predict
+    :param X_test: Test features
+    :param y_test: Test targets
+    :return metrics: MAE, RMSE, and R2
+    """
+
+    y_pred = model.predict(X_test)
+    metrics = compute_metrics(y_test, y_pred)
 
     return metrics

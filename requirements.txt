@@ -9,3 +9,4 @@ httpx
 numpy
 xgboost
 ruff
+tensorflow

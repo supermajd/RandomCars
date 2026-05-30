@@ -7,7 +7,7 @@ from sklearn.compose import ColumnTransformer
 from sklearn.impute import SimpleImputer
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import OneHotEncoder
+from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
 from ml.config import (
     CATEGORICAL_FEATURES,
@@ -21,9 +21,9 @@ from ml.config import (
 
 
 def load_data(path) -> pd.DataFrame:
-    """Loads the Ames housing dataset.
+    """Loads the car price dataset.
     :param path: Path to the CSV file
-    :return data: Raw housing data
+    :return data: Raw car data
     """
 
     data = pd.read_csv(path)
@@ -62,6 +62,7 @@ def build_preprocessor() -> ColumnTransformer:
     numeric = Pipeline(
         steps=[
             ('imputer', SimpleImputer(strategy='median')),
+            ('scaler', StandardScaler()),
         ]
     )
 

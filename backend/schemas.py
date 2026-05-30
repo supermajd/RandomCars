@@ -1,35 +1,30 @@
-"""schemas.py: Request and response schemas for the Random Houses API."""
+"""schemas.py: Request and response schemas for the Car Broker 1001 API."""
 
 __author__ = 'Majd Jamal'
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
-class HouseFeatures(BaseModel):
-    """Validated input features for a single house. Aliases map to the
-    exact column names the model was trained on (which contain spaces)."""
+class CarFeatures(BaseModel):
+    """Validated input features for a single car.
 
-    gr_liv_area: float = Field(alias='Gr Liv Area')
-    lot_area: float = Field(alias='Lot Area')
-    overall_qual: int = Field(alias='Overall Qual')
-    overall_cond: int = Field(alias='Overall Cond')
-    year_built: int = Field(alias='Year Built')
-    year_remod_add: int = Field(alias='Year Remod/Add')
-    total_bsmt_sf: float = Field(alias='Total Bsmt SF')
-    garage_cars: int = Field(alias='Garage Cars')
-    garage_area: float = Field(alias='Garage Area')
-    full_bath: int = Field(alias='Full Bath')
-    totrms_abvgrd: int = Field(alias='TotRms AbvGrd')
-    fireplaces: int = Field(alias='Fireplaces')
+    Field names match the exact column names the model was trained on
+    (see ml/config.py). Numeric features are km_driven, mileage, engine,
+    max_power, and seats. Categorical features are brand, fuel_type, and
+    transmission_type.
+    """
 
-    neighborhood: str = Field(alias='Neighborhood')
-    house_style: str = Field(alias='House Style')
-    bldg_type: str = Field(alias='Bldg Type')
-    central_air: str = Field(alias='Central Air')
-    exter_qual: str = Field(alias='Exter Qual')
-    kitchen_qual: str = Field(alias='Kitchen Qual')
+    # Numeric features
+    km_driven: int
+    mileage: float
+    engine: float
+    max_power: float
+    seats: int
 
-    model_config = {'populate_by_name': True}
+    # Categorical features
+    brand: str
+    fuel_type: str
+    transmission_type: str
 
 
 class PredictionResponse(BaseModel):

@@ -1,4 +1,4 @@
-"""main.py: Random Houses inference API. Loads the approved model and serves predictions."""
+"""main.py: Car Broker 1001 inference API. Loads the approved model and serves predictions."""
 
 __author__ = 'Majd Jamal'
 
@@ -7,7 +7,7 @@ from contextlib import asynccontextmanager
 import pandas as pd
 from fastapi import FastAPI, HTTPException
 
-from backend.schemas import HouseFeatures, ModelInfo, PredictionResponse
+from backend.schemas import CarFeatures, ModelInfo, PredictionResponse
 from db.db import init_db, log_prediction
 from ml.persistence import load_model
 
@@ -21,7 +21,7 @@ async def lifespan(app: FastAPI):
     yield
 
 
-app = FastAPI(title='Random Houses', lifespan=lifespan)
+app = FastAPI(title='Car Broker 1001', lifespan=lifespan)
 
 
 @app.get('/health')
@@ -57,9 +57,9 @@ def model_information():
 
 
 @app.post('/predict', response_model=PredictionResponse)
-def predict(features: HouseFeatures):
-    """Predicts a house price from validated input and logs the prediction.
-    :param features: Validated house attributes
+def predict(features: CarFeatures):
+    """Predicts a car price from validated input and logs the prediction.
+    :param features: Validated car attributes
     :return response: Predicted price, request id, and model version
     """
 

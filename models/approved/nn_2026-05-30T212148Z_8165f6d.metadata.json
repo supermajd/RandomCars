@@ -1,0 +1,43 @@
+{
+  "model_id": "nn_2026-05-30T212148Z_8165f6d",
+  "model_name": "nn",
+  "created_at": "2026-05-30T212148Z",
+  "git_sha": "8165f6d",
+  "data_path": "data/raw/Cars.csv",
+  "features": [
+    "km_driven",
+    "mileage",
+    "engine",
+    "max_power",
+    "seats",
+    "brand",
+    "fuel_type",
+    "transmission_type"
+  ],
+  "random_state": 42,
+  "test_size": 0.2,
+  "model_params": {
+    "layers": [
+      48,
+      48,
+      48
+    ],
+    "learning_rate": 0.001,
+    "dropout": 0.2,
+    "activation": "relu",
+    "epochs": 1500,
+    "batch_size": 64,
+    "validation_split": 0.2,
+    "early_stopping_patience": 10
+  },
+  "artifacts": {
+    "model": "models/approved/nn_2026-05-30T212148Z_8165f6d.keras",
+    "preprocessor": "models/approved/nn_2026-05-30T212148Z_8165f6d.preprocessor.joblib"
+  },
+  "metrics": {
+    "mae": 191269.53125,
+    "rmse": 424256.3813544824,
+    "r2": 0.7608955502510071
+  },
+  "status": "approved"
+}

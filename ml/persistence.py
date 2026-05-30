@@ -6,8 +6,11 @@ import argparse
 import json
 import shutil
 from datetime import UTC, datetime
+from pathlib import Path
 
 import joblib
+import mlflow
+import numpy as np
 
 from ml.config import APPROVED_DIR, CANDIDATE_DIR, REGRESSION_TOLERANCE
 
@@ -60,22 +63,16 @@ def compare(candidate, front) -> bool:
 
 def promote(model_id: str) -> bool:
     """Promotes a candidate to approved if it passes the regression gate.
-
-    Locates the candidate files, runs the gate against the currently approved
-    model, and on pass copies the artifact and metadata into the approved
-    directory, flips status to 'approved', and repoints latest.json.
-
     :param model_id: Candidate model id to promote
     :return promoted: True if promoted, False otherwise
     """
 
     APPROVED_DIR.mkdir(parents=True, exist_ok=True)
 
-    cand_model = CANDIDATE_DIR / f'{model_id}.joblib'
     cand_meta = CANDIDATE_DIR / f'{model_id}.metadata.json'
 
-    if not cand_model.exists() or not cand_meta.exists():
-        raise ValueError(f'Candidate not found: {model_id}. Check models/candidates/.')
+    if not cand_meta.exists():
+        raise ValueError(f'Candidate metadata not found: {model_id}. Check models/candidates/.')
 
     with open(cand_meta) as f:
         metadata = json.load(f)
@@ -91,16 +88,36 @@ def promote(model_id: str) -> bool:
         print(f'Candidate {model_id} rejected: regressed more than tolerance vs approved model.')
         return False
 
+    if metadata.get('mlflow_run_id'):
+        with mlflow.start_run(run_id=metadata['mlflow_run_id']):
+            mlflow.set_tag('promoted', 'true')
+            mlflow.set_tag('promoted_at', datetime.now(UTC).isoformat())
+
     # -=-=-=-
-    # Promote artifact and metadata
+    # Copy artifact files to approved dir
     # -=-=-=-
+
+    artifact_paths = metadata.get('artifacts', {})
+
+    if not artifact_paths:
+        raise ValueError(f'Candidate {model_id} has no artifacts listed in metadata.')
+
+    approved_paths = {}
+
+    for kind, src in artifact_paths.items():
+        src_path = Path(src)
+
+        if not src_path.exists():
+            raise ValueError(f'Candidate artifact missing on disk: {src_path}')
+
+        dst_path = APPROVED_DIR / src_path.name
+        shutil.copy2(src_path, dst_path)
+        approved_paths[kind] = str(dst_path)
 
     metadata['status'] = 'approved'
+    metadata['artifacts'] = approved_paths
 
-    appr_model = APPROVED_DIR / f'{model_id}.joblib'
     appr_meta = APPROVED_DIR / f'{model_id}.metadata.json'
-
-    shutil.copy2(cand_model, appr_model)
 
     with open(appr_meta, 'w') as f:
         json.dump(metadata, f, indent=2)
@@ -111,6 +128,7 @@ def promote(model_id: str) -> bool:
 
     pointer = {
         'model_id': model_id,
+        'model_name': metadata.get('model_name'),
         'promoted_at': datetime.now(UTC).strftime('%Y-%m-%dT%H%M%SZ'),
         'metrics': candidate,
     }
@@ -135,46 +153,68 @@ def main() -> None:
         raise SystemExit(1)
 
 
-def get_approved_model_path():
-    """Returns the artifact path of the currently approved model.
-    :return model_path: Path to the approved .joblib, or None if none exists
+def get_approved_metadata():
+    """Returns the metadata of the currently approved model.
+    :return metadata: Approved metadata dict, or None if none exists
     """
 
     if not LATEST_PATH.exists():
         return None
 
     with open(LATEST_PATH) as f:
-        latest = json.load(f)
+        pointer = json.load(f)
 
-    model_path = APPROVED_DIR / f'{latest["model_id"]}.joblib'
+    meta_path = APPROVED_DIR / f'{pointer["model_id"]}.metadata.json'
 
-    return model_path
+    if not meta_path.exists():
+        return None
+
+    with open(meta_path) as f:
+        metadata = json.load(f)
+
+    return metadata
 
 
 def load_model():
     """Loads the currently approved model and its metadata for serving.
 
-    Only loads self-generated, approved artifacts. joblib is pickle-based and
-    can execute arbitrary code on load, so never read untrusted files.
+    Sklearn pipelines load from a single joblib file. Keras models load
+    from a .keras file with a separate preprocessor joblib.
 
-    :return model: Fitted pipeline, or None if no approved model exists
-    :return metadata: Approved model metadata dict, or None if none exists
+    Only loads self-generated, approved artifacts. joblib is pickle-based
+    and can execute arbitrary code on load, so never read untrusted files.
+
+    :return model: Object with .predict(X), or None if no approved model
+    :return metadata: Approved metadata dict, or None
     """
 
-    model_path = get_approved_model_path()
+    metadata = get_approved_metadata()
 
-    if model_path is None:
+    if metadata is None:
         return None, None
 
-    with open(LATEST_PATH) as f:
-        model_id = json.load(f)['model_id']
+    artifact_paths = metadata['artifacts']
+    model_name = metadata['model_name']
 
-    meta_path = APPROVED_DIR / f'{model_id}.metadata.json'
+    if model_name == 'nn':
+        from tensorflow import keras
 
-    model = joblib.load(model_path)
+        keras_model = keras.models.load_model(artifact_paths['model'])
+        preprocessor = joblib.load(artifact_paths['preprocessor'])
 
-    with open(meta_path) as f:
-        metadata = json.load(f)
+        def predict(X):
+            X_t = preprocessor.transform(X)
+            if hasattr(X_t, 'toarray'):
+                X_t = X_t.toarray()
+            y_pred_log = keras_model.predict(X_t, verbose=0).flatten()
+            return np.expm1(y_pred_log)
+
+        # Bundle the predict function on a simple namespace so the API
+        # can still call model.predict(X) uniformly
+        model = type('NNModel', (), {'predict': staticmethod(predict)})()
+
+    else:
+        model = joblib.load(artifact_paths['model'])
 
     return model, metadata
 

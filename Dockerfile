@@ -24,7 +24,7 @@ COPY models/approved/ models/approved/
 # Split is needed by config paths
 COPY data/raw/ data/raw/
 
-ENV DB_PATH=/data/house_price.db
+ENV DB_PATH=/data/car_price.db
 
 RUN mkdir -p /data && chown -R appuser:appuser /data
 

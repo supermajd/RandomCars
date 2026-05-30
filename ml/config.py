@@ -1,4 +1,4 @@
-"""config.py: Central configuration for the Random Houses project."""
+"""config.py: Central configuration for the Car Broker 1001 project."""
 
 __author__ = 'Majd Jamal'
 
@@ -8,7 +8,7 @@ from pathlib import Path
 # Paths
 # -=-=-=-
 
-DATA_PATH = Path('data/raw/AmesHousing.csv')  # Immutable training input
+DATA_PATH = Path('data/raw/Cars.csv')  # Immutable training input
 CANDIDATE_DIR = Path('models/candidates')  # New models land here first
 APPROVED_DIR = Path('models/approved')  # Promoted models only
 METRICS_DIR = Path('artifacts/metrics')  # Saved evaluation metrics
@@ -18,32 +18,22 @@ METRICS_DIR = Path('artifacts/metrics')  # Saved evaluation metrics
 # Target and features
 # -=-=-=-
 
-TARGET = 'SalePrice'
+TARGET = 'selling_price'
 
 # Numeric features used by the model
 NUMERIC_FEATURES = [
-    'Gr Liv Area',
-    'Lot Area',
-    'Overall Qual',
-    'Overall Cond',
-    'Year Built',
-    'Year Remod/Add',
-    'Total Bsmt SF',
-    'Garage Cars',
-    'Garage Area',
-    'Full Bath',
-    'TotRms AbvGrd',
-    'Fireplaces',
+    'km_driven',
+    'mileage',
+    'engine',
+    'max_power',
+    'seats',
 ]
 
 # Categorical features used by the model
 CATEGORICAL_FEATURES = [
-    'Neighborhood',
-    'House Style',
-    'Bldg Type',
-    'Central Air',
-    'Exter Qual',
-    'Kitchen Qual',
+    'brand',
+    'fuel_type',
+    'transmission_type',
 ]
 
 # Full feature list consumed by training and inference
@@ -79,6 +69,16 @@ MODEL_CONFIGS = {
         'objective': 'reg:squarederror',
         'random_state': RANDOM_STATE,
         'n_jobs': -1,
+    },
+    'nn': {
+        'layers': [128, 256],
+        'learning_rate': 1e-3,
+        'dropout': 0.2,
+        'activation': 'relu',
+        'epochs': 200,
+        'batch_size': 32,
+        'validation_split': 0.2,
+        'early_stopping_patience': 10,
     },
 }
 

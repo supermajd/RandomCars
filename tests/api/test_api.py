@@ -1,4 +1,4 @@
-"""test_api.py: Contract tests for the Random Houses API."""
+"""test_api.py: Contract tests for the Car Broker 1001 API."""
 
 __author__ = 'Majd Jamal'
 

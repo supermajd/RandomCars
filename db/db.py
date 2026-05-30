@@ -9,7 +9,7 @@ import uuid
 from datetime import UTC, datetime
 from pathlib import Path
 
-DB_PATH = Path(os.environ.get('DB_PATH', 'data/runtime/house_price.db'))
+DB_PATH = Path(os.environ.get('DB_PATH', 'data/runtime/car_price.db'))
 
 
 SCHEMA = """
@@ -58,7 +58,7 @@ def log_prediction(features: dict, predicted_price: float, model_version: str) -
     """Logs a single prediction to the database.
 
     :param features: Validated input features as a dict
-    :param predicted_price: Predicted house price
+    :param predicted_price: Predicted car price
     :param model_version: Model id that produced the prediction
     :return request_id: Generated id for this prediction
     """

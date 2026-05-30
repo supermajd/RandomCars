@@ -10,13 +10,13 @@ from ml.config import MODEL_NAME
 
 def parse_train_args():
     parser = argparse.ArgumentParser(
-        description='Train a house price model and save it as candidate if it passes quality gates.'
+        description='Train a car price model and save it as candidate if it passes quality gates.'
     )
 
     parser.add_argument(
         '--model-name',
         default=MODEL_NAME,
-        choices=['random_forest', 'xgboost'],
+        choices=['random_forest', 'xgboost', 'nn'],
         help='Model type to train.',
     )
 
@@ -28,5 +28,21 @@ def parse_train_args():
 
     # XGBoost specific
     parser.add_argument('--learning-rate', type=float, default=None)
+
+    # NN specific
+
+    parser.add_argument(
+        '--layers',
+        type=int,
+        nargs='+',
+        default=None,
+        help='Hidden layer sizes for nn, e.g. --layers 128 256',
+    )
+    parser.add_argument('--dropout', type=float, default=None)
+    parser.add_argument('--activation', type=str, default=None)
+    parser.add_argument('--epochs', type=int, default=None)
+    parser.add_argument('--batch-size', type=int, default=None)
+    parser.add_argument('--validation-split', type=float, default=None)
+    parser.add_argument('--early-stopping-patience', type=int, default=None)
 
     return parser.parse_args()
