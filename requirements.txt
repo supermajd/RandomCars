@@ -10,3 +10,4 @@ numpy
 xgboost
 ruff
 tensorflow
+mlflow
