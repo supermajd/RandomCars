@@ -1,3 +1,11 @@
+---
+title: Car Broker 1001
+emoji: 🚗
+colorFrom: blue
+colorTo: green
+sdk: docker
+app_port: 8000
+---
 # Car Broker 1001
 
 A small MLOps project that trains a model on used-car data to predict selling prices, then serves it through a FastAPI backend with automated tests, CI, and Kubernetes deployment.
