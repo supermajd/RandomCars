@@ -8,7 +8,7 @@ RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
 
 FROM python:3.11-slim
 
-RUN useradd -m appuser
+RUN useradd -m -u 1000 appuser
 
 WORKDIR /app
 
@@ -17,11 +17,9 @@ COPY --from=build /install /usr/local
 COPY backend/ backend/
 COPY ml/ ml/
 COPY db/ db/
-
-# Bake the approved model
 COPY models/approved/ models/approved/
 
-# Split is needed by config paths
+# Drop this if data/raw/ isn't needed at inference time
 COPY data/raw/ data/raw/
 
 ENV DB_PATH=/data/car_price.db
