@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: randomcars-api
+  labels:
+    app: randomcars
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: randomcars
+  template:
+    metadata:
+      labels:
+        app: randomcars
+    spec:
+      containers:
+        - name: api
+          image: randomcars:dev
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8000
+          env:
+            - name: DB_PATH
+              value: /data/randomcars.db
+            - name: MODEL_DIR
+              value: /app/models/approved
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 15
+            periodSeconds: 30
+          resources:
+            requests:
+              memory: 256Mi
+              cpu: 100m
+            limits:
+              memory: 512Mi
+              cpu: 500m
+          volumeMounts:
+            - name: data
+              mountPath: /data
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: randomcars-data
