@@ -12,7 +12,7 @@ A small MLOps project that trains a model on used-car data to predict selling pr
 
 The point isn't the model — it's the workflow around it: training, quality gates, promotion, serving, observability, and deployment to Kubernetes.
 
-**Live backend:** https://randomhouses.onrender.com
+**Live backend:** https://supermajd-randomcars.hf.space
 
 ## What this project demonstrates
 
@@ -32,20 +32,20 @@ Python · scikit-learn · XGBoost · TensorFlow/Keras · pandas · FastAPI · SQ
 Health check:
 
 ```bash
-curl -s https://randomhouses.onrender.com/health | jq
+curl -s https://supermajd-randomcars.hf.space/health | jq
 ```
 
 ```json
 {
   "status": "ok",
-  "model_version": "nn_2026-05-29T202148Z_8165f6d"
+  "model_version": "xgboost_2026-05-30T213254Z_8165f6d"
 }
 ```
 
 Predict a price:
 
 ```bash
-curl -s -X POST https://randomhouses.onrender.com/predict \
+curl -s -X POST https://supermajd-randomcars.hf.space/predict \
   -H "Content-Type: application/json" \
   -d '{
     "brand": "Maruti",
@@ -61,13 +61,13 @@ curl -s -X POST https://randomhouses.onrender.com/predict \
 
 ```json
 {
-  "request_id": "b7f8eee2-68fc-421e-babf-40c1af353c4d",
-  "predicted_price": 121500.0,
-  "model_version": "nn_2026-05-29T202148Z_8165f6d"
+  "request_id": "5d058398-85e9-4131-b31e-38a3aeff8e20",
+  "predicted_price": 125410.265625,
+  "model_version": "xgboost_2026-05-30T213254Z_8165f6d"
 }
 ```
 
-> Hosted on Render's free tier — the first request may be slow while the service wakes up. If `/predict` returns `503`, the model is still loading. Check `/health` first.
+> Hosted on Hugging Face Spaces' free tier — the first request may be slow while the service wakes up. If `/predict` returns `503`, the model is still loading. Check `/health` first.
 
 ## The workflow
 
